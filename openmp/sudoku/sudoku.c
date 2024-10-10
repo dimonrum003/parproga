@@ -3,15 +3,18 @@
 #include <stdbool.h>
 #include <omp.h>
 
-#define SIZE 9    // Максимальный размер поля
+#define SIZE 9    // Размер поля
 #define SUBGRID 3 // Размер малых квадратов
 
 int grid[SIZE][SIZE]; // Поле Судоку
 
 // Функция для печати поля
-void print_grid() {
-    for (int i = 0; i < SIZE; i++) {
-        for (int j = 0; j < SIZE; j++) {
+void print_grid()
+{
+    for (int i = 0; i < SIZE; i++)
+    {
+        for (int j = 0; j < SIZE; j++)
+        {
             printf("%2d ", grid[i][j]);
         }
         printf("\n");
@@ -19,15 +22,19 @@ void print_grid() {
 }
 
 // Функция для чтения поля Судоку из текстового файла
-void read_grid(const char* filename) {
+void read_grid(const char* filename)
+{
     FILE *file = fopen(filename, "r");
-    if (file == NULL) {
+    if (file == NULL)
+    {
         printf("Ошибка при открытии файла.\n");
         exit(1);
     }
 
-    for (int i = 0; i < SIZE; i++) {
-        for (int j = 0; j < SIZE; j++) {
+    for (int i = 0; i < SIZE; i++)
+    {
+        for (int j = 0; j < SIZE; j++)
+        {
             fscanf(file, "%d", &grid[i][j]);
         }
     }
@@ -35,23 +42,37 @@ void read_grid(const char* filename) {
 }
 
 // Функция для проверки, можно ли поставить число num в клетку (row, col)
-bool is_valid(int row, int col, int num) {
+bool is_valid(int row, int col, int num)
+{
     // Проверка строки
-    for (int x = 0; x < SIZE; x++) {
-        if (grid[row][x] == num) return false;
+    for (int x = 0; x < SIZE; x++)
+    {
+        if (grid[row][x] == num)
+        {
+            return false;
+        }
     }
 
     // Проверка столбца
-    for (int x = 0; x < SIZE; x++) {
-        if (grid[x][col] == num) return false;
+    for (int x = 0; x < SIZE; x++) 
+    {
+        if (grid[x][col] == num)
+        {
+            return false;
+        }
     }
 
     // Проверка подгруппы 5x5
     int startRow = row / SUBGRID * SUBGRID;
     int startCol = col / SUBGRID * SUBGRID;
-    for (int i = 0; i < SUBGRID; i++) {
-        for (int j = 0; j < SUBGRID; j++) {
-            if (grid[startRow + i][startCol + j] == num) return false;
+    for (int i = 0; i < SUBGRID; i++)
+    {
+        for (int j = 0; j < SUBGRID; j++)
+        {
+            if (grid[startRow + i][startCol + j] == num)
+            {
+                return false;
+            }
         }
     }
 
@@ -59,33 +80,48 @@ bool is_valid(int row, int col, int num) {
 }
 
 // Последовательный алгоритм решения Судоку (backtracking)
-bool solve_sudoku() {
+bool solve_sudoku()
+{
     int row = -1, col = -1;
     bool is_empty = false;
 
     // Поиск незаполненной клетки
-    for (int i = 0; i < SIZE; i++) {
-        for (int j = 0; j < SIZE; j++) {
-            if (grid[i][j] == 0) {
+    for (int i = 0; i < SIZE; i++)
+    {
+        for (int j = 0; j < SIZE; j++)
+        {
+            if (grid[i][j] == 0)
+            {
                 row = i;
                 col = j;
                 is_empty = true;
                 break;
             }
         }
-        if (is_empty) break;
+        if (is_empty)
+        {
+            break;
+        }
     }
 
     // Если пустых клеток нет, значит решено
-    if (!is_empty) return true;
+    if (!is_empty)
+    {
+        return true;
+    }
 
     // Пробуем вставить числа
-    for (int num = 1; num <= SIZE; num++) {
-        if (is_valid(row, col, num)) {
+    for (int num = 1; num <= SIZE; num++)
+    {
+        if (is_valid(row, col, num))
+        {
             grid[row][col] = num;
 
             // Рекурсивный вызов для дальнейшего решения
-            if (solve_sudoku()) return true;
+            if (solve_sudoku())
+            {
+                return true;
+            }
 
             // Если решение не найдено, откатываемся назад
             grid[row][col] = 0;
@@ -96,16 +132,20 @@ bool solve_sudoku() {
 }
 
 // Параллельный алгоритм решения Судоку с использованием OpenMP
-bool parallel_solve_sudoku() {
+bool parallel_solve_sudoku()
+{
     int row = -1, col = -1;
     bool is_empty = false;
     bool solved = false;  // Флаг для отслеживания состояния решения
 
     // Поиск незаполненной клетки
     #pragma omp parallel for collapse(2) reduction(||:is_empty)
-    for (int i = 0; i < SIZE; i++) {
-        for (int j = 0; j < SIZE; j++) {
-            if (grid[i][j] == 0) {
+    for (int i = 0; i < SIZE; i++)
+    {
+        for (int j = 0; j < SIZE; j++)
+        {
+            if (grid[i][j] == 0)
+            {
                 row = i;
                 col = j;
                 is_empty = true;
@@ -114,28 +154,40 @@ bool parallel_solve_sudoku() {
     }
 
     // Если пустых клеток нет, задача решена
-    if (!is_empty) return true;
+    if (!is_empty)
+    {
+        return true;
+    }
 
     // Пробуем вставить числа с использованием задач OpenMP
     #pragma omp parallel
     {
         #pragma omp single
         {
-            for (int num = 1; num <= SIZE; num++) {
-                #pragma omp task firstprivate(num, row, col) shared(solved)
+            for (int num = 1; num <= SIZE; num++)
+            {
+                // Если решение найдено, прекращаем создание задач
+                if (!solved)
                 {
-                    if (!solved && is_valid(row, col, num)) {
-                        grid[row][col] = num;
+                    #pragma omp task firstprivate(num, row, col) shared(solved)
+                    {
+                        if (!solved && is_valid(row, col, num))
+                        {
+                            grid[row][col] = num;
 
-                        // Рекурсивный вызов параллельной функции
-                        if (parallel_solve_sudoku()) {
-                            #pragma omp critical
-                            solved = true;
-                        }
+                            // Рекурсивный вызов параллельной функции
+                            if (parallel_solve_sudoku())
+                            {
+                                // Атомарное обновление флага, если решение найдено
+                                #pragma omp atomic write
+                                solved = true;
+                            }
 
-                        // Откат изменений, если решение не найдено
-                        if (!solved) {
-                            grid[row][col] = 0;
+                            // Откат изменений, если решение не найдено
+                            if (!solved)
+                            {
+                                grid[row][col] = 0;
+                            }
                         }
                     }
                 }
@@ -148,16 +200,20 @@ bool parallel_solve_sudoku() {
 }
 
 // Копирование содержимого одного массива в другой
-void copy_grid(int src[SIZE][SIZE], int dest[SIZE][SIZE]) {
-    for (int i = 0; i < SIZE; i++) {
-        for (int j = 0; j < SIZE; j++) {
+void copy_grid(int src[SIZE][SIZE], int dest[SIZE][SIZE])
+{
+    for (int i = 0; i < SIZE; i++)
+    {
+        for (int j = 0; j < SIZE; j++)
+        {
             dest[i][j] = src[i][j];
         }
     }
 }
 
 // Главная функция программы
-int main() {
+int main()
+{
     // Чтение поля Судоку
     read_grid("sudoku_inputs.txt");
 
@@ -168,7 +224,8 @@ int main() {
     // *** Последовательное решение ***
     printf("Решение последовательного алгоритма...\n");
     double start_time_seq = omp_get_wtime();  // Начало измерения времени
-    if (solve_sudoku()) {
+    if (solve_sudoku())
+    {
         double end_time_seq = omp_get_wtime();  // Конец измерения времени
         printf("Решённое поле:\n");
         print_grid();
@@ -187,7 +244,8 @@ int main() {
     {
         #pragma omp single
         {
-            if (parallel_solve_sudoku()) {
+            if (parallel_solve_sudoku())
+            {
                 double end_time_par = omp_get_wtime();  // Конец измерения времени
                 printf("Решённое поле (параллельное решение):\n");
                 print_grid();
