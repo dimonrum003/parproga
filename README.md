@@ -5,3 +5,4 @@ MIPT course on parallel programming
 - openmp - tasks dedicated to OpenMP
 - mpi - tasks dedicated to MPI
 - pthread - tasks dedicated to Pthread
+- opencl - tasks dedicated to OpenCL
